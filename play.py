@@ -1,4 +1,7 @@
 import mido,time
+import sys
+# sys.stdout.encoding = 'utf-8'
+print(sys.stdout.encoding)
 
 mido.set_backend('mido.backends.rtmidi')
 
@@ -13,7 +16,7 @@ outport.send(msg)
 
 def playfile(fn):
     from mido import MidiFile
-    midifile = MidiFile(fn)
+    midifile = MidiFile(fn,charset='latin-1')
     print(len(midifile.tracks))
     print('type',midifile.type)
 
@@ -22,6 +25,6 @@ def playfile(fn):
         if not msg.is_meta:
             outport.send(msg)
 
-            print(msg)
+        print(str(msg).encode('utf-8'))
 
-playfile('./midies/bach_846.mid')
+playfile('./midies/mz_311_3.mid')
