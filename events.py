@@ -32,6 +32,9 @@ class CodeRegistrar:
                 pass
         raise Exception('input out of range')
 
+    def get_code_categories(self):
+        return self.offset_index
+
 from quantization import delay_quantize,delay_recover,vel_quantize,vel_recover
 from quantization import delay_quantization_levels, vel_quantization_levels
 
