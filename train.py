@@ -16,7 +16,7 @@ print(categories,'categories in stream')
 def model_builder():
     c = ct.Can()
     gru,d1 = (
-        c.add(GRULN(categories,256)),
+        c.add(GRU(categories,256)),
         c.add(LastDimDense(256,categories)),
     )
 
@@ -90,8 +90,6 @@ feed,stateful_predict = feed_gen()
 get_session().run(gvi()) # init global variable
 
 # training loop
-from plotter import interprocess_plotter as plotter
-plotter = plotter(1)
 
 time_steps = 64 # 64 events
 def r(ep=100):
@@ -109,7 +107,6 @@ def r(ep=100):
 
         loss = feed(minibatch)
         print('loss:',loss)
-        plotter.pushys([loss])
 
         if i%100==0 : pass#show2()
 
