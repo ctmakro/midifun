@@ -75,6 +75,7 @@ class Event:
 # from MIDI file to array of events
 def MIDI_to_events(fn): # given midi filename
     midifile = open_midifile(fn)
+    dedup_counter = 0
     events = []
 
     def get_last_event():
@@ -89,6 +90,7 @@ def MIDI_to_events(fn): # given midi filename
             le = get_last_event()
             if le.category == 'delay':
                 le.value += msg.time
+                dedup_counter+=1
             else:
                 events.append(Event('delay',msg.time))
 
@@ -102,7 +104,7 @@ def MIDI_to_events(fn): # given midi filename
                 events.append(Event('note', msg.note))
                 events.append(Event('velocity', 0))
 
-    print('got {} events'.format(len(events)))
+    print('got {} events, {} dups elimd.'.format(len(events),dedup_counter))
     return events
 
 # given an array of events, play them out loud
