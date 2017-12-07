@@ -15,9 +15,10 @@ print(categories,'categories in stream')
 # RNN model
 def model_builder():
     c = ct.Can()
-    gru,d1 = (
-        c.add(GRU(categories,256)),
-        c.add(LastDimDense(256,categories)),
+    gru,d1,d2 = (
+        c.add(GRU(categories,128)),
+        c.add(LastDimDense(128,64)),
+        c.add(LastDimDense(64,categories)),
     )
 
     def call(i,starting_state=None):
@@ -30,6 +31,8 @@ def model_builder():
         ending_state = i[:,t-1,:]
 
         i = d1(i)
+        i = Act('swish')(i)
+        i = d2(i)
         # i = Act('softmax')(i)
 
         return i, ending_state
