@@ -13,8 +13,8 @@ def convert_all_and_save():
     for fn in midies:
         print('converting', fn)
         events = MIDI_to_events(fn)
-        events = [e.to_integer() for e in events]
-        events = np.array(events).astype('uint8')
+        # events = [e.to_integer() for e in events]
+        # events = np.array(events).astype('uint8')
         print('done.')
         streams.append(events)
 
@@ -45,29 +45,24 @@ def join_all_into_one(streams):
     for s in streams:
         bigstream += [a for a in s]
 
-    # deal with the joinning part
-    joined_bigstream = []
-    laste = None
-    for e in bigstream:
-        curre = Event.from_integer(e)
-        if laste is not None:
-            if curre.category=='delay' and laste.category=='delay':
-                laste.value+=curre.value
-                combination_counter+=1
-            else:
-                joined_bigstream.append(curre)
+    for i in range(len(streams)):
+        if i == 0:
+            bigstream += streams[i]
         else:
-            joined_bigstream.append(curre)
+            nf = streams[i][0]
+            ls = bigstream[-1]
+            if nf.category=='delay' and ls.category=='delay':
+                ls.value+=nf.value
+                combination_counter+=1
+                bigstream += streams[i][1:]
+            else:
+                bigstream += streams[i]
 
-        laste = curre
-
-    joined_bigstream = [e.to_integer() for e in joined_bigstream]
-
-    print('joined_bigstream:', len(joined_bigstream))
+    print('joined_bigstream:', len(bigstream))
     print('delay events conbined:', combination_counter)
-    joined_bigstream = np.array(joined_bigstream)
+    bigstream = np.array([e.to_integer()for e in bigstream]).astype('uint8')
 
-    return joined_bigstream
+    return bigstream
 
 convert_if_needed()
 bigstream = load_converted()
