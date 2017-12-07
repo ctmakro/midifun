@@ -1,22 +1,12 @@
-import mido,time
+import time
 import sys
 # sys.stdout.encoding = 'utf-8'
 print(sys.stdout.encoding)
 
-mido.set_backend('mido.backends.rtmidi')
-
-outport = mido.open_output()
-
-msg = mido.Message('note_on', note=60)
-print(msg.bytes())
-
-outport.send(msg)
-
-# time.sleep(4)
+from midiutil import mido, outport, open_midifile
 
 def playfile(fn):
-    from mido import MidiFile
-    midifile = MidiFile(fn,charset='latin-1')
+    midifile = open_midifile(fn)
     print(len(midifile.tracks))
     print('type',midifile.type)
 
@@ -27,4 +17,4 @@ def playfile(fn):
 
         print(str(msg).encode('utf-8'))
 
-playfile('./midies/mz_311_3.mid')
+playfile('./midies/bach_846.mid')
