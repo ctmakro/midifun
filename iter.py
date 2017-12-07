@@ -6,6 +6,8 @@ names = os.listdir(midipath)
 
 midies = list(filter(lambda n:True if n.lower().endswith('.mid') else False, names))
 
+midies = [midipath+m for m in midies]
+
 def show_info(midifile):
     print('n of tracks',len(midifile.tracks))
     print('type',midifile.type)
@@ -14,7 +16,7 @@ def show_info(midifile):
 
 def show_all_info():
     for fn in midies:
-        midifile = open_midifile(midipath+fn)
+        midifile = open_midifile(fn)
         show_info(midifile)
         del midifile
 
