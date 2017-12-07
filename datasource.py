@@ -18,25 +18,17 @@ def convert_all_and_save():
         print('done.')
         streams.append(events)
 
-    with open(data_filename,'wb') as f:
-        # create an array object and put all the arrays into it.
-        # otherwise np.asanyarray() within np.savez_compressed()
-        # might make stupid mistakes
-        w = streams
-        arrobj = np.empty([len(w)],dtype='object') # array object
-        for i in range(len(w)):
-            arrobj[i] = w[i]
+    bigstream = join_all_into_one(streams)
 
-        np.savez_compressed(f,w=arrobj)
+    with open(data_filename,'wb') as f:
+        np.savez_compressed(f,w=bigstream)
         print('successfully saved to',data_filename)
 
 def load_converted():
     with open(data_filename,'rb') as f:
         loaded_w = np.load(f)
         print('successfully loaded from',data_filename)
-        if hasattr(loaded_w,'items'):
-            # compressed npz (newer)
-            loaded_w = loaded_w['w']
+        loaded_w = loaded_w['w']
     return loaded_w
 
 def convert_if_needed():
@@ -45,10 +37,42 @@ def convert_if_needed():
     else:
         convert_all_and_save()
 
-convert_if_needed()
-streams = load_converted()
+# join all streams into a big one, combining delays
+def join_all_into_one(streams):
+    combination_counter = 0
 
-if __name__ == '__main__':
-    events = streams[np.random.choice(len(streams))]
-    events = [Event.from_integer(e) for e in events]
-    play_events(events)
+    bigstream = []
+    for s in streams:
+        bigstream += [a for a in s]
+
+    # deal with the joinning part
+    joined_bigstream = []
+    laste = None
+    for e in bigstream:
+        curre = Event.from_integer(e)
+        if laste is not None:
+            if curre.category=='delay' and laste.category=='delay':
+                laste.value+=curre.value
+                combination_counter+=1
+            else:
+                joined_bigstream.append(curre)
+        else:
+            joined_bigstream.append(curre)
+
+        laste = curre
+
+    joined_bigstream = [e.to_integer() for e in joined_bigstream]
+
+    print('joined_bigstream:', len(joined_bigstream))
+    print('delay events conbined:', combination_counter)
+    joined_bigstream = np.array(joined_bigstream)
+
+    return joined_bigstream
+
+convert_if_needed()
+bigstream = load_converted()
+
+# if __name__ == '__main__':
+    # events = streams[np.random.choice(len(streams))]
+    # events = [Event.from_integer(e) for e in events]
+    # play_events(events)
