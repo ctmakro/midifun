@@ -10,13 +10,21 @@ data_filename = 'converted.npz'
 
 def convert_all_and_save():
     streams = []
-    for fn in midies:
+
+    from thready import amap
+
+    def process(fn):
+    # for fn in midies:
         print('converting', fn)
         events = MIDI_to_events(fn)
         # events = [e.to_integer() for e in events]
         # events = np.array(events).astype('uint8')
         print('done.')
-        streams.append(events)
+        # streams.append(events)
+        return events
+
+    result = amap(process, midies)
+    streams = [result[i]for i in result]
 
     bigstream = join_all_into_one(streams)
 
