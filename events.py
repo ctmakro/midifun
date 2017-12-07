@@ -60,6 +60,7 @@ class Event:
 
     def to_integer(self):
         value = quantize_recover_map[self.category][0](self.value)
+        assert(value is not None)
         return cr.encode(self.category, value)
 
     @classmethod

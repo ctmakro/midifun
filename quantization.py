@@ -14,13 +14,14 @@ def quantizer_gen(splits):
         else:
             # random jitter
             for i in range(len(splits)):
-                if value<splits[i]:
+                if value <= splits[i]:
                     prob = (value-splits[i-1])/(splits[i]-splits[i-1])
                     if prob > np.random.uniform():
                     # if prob > 0.5:
                         return i
                     else:
                         return i-1
+            raise Exception('leaking input') # we should not be here
 
     def recoverer(i):
         return splits[i]
