@@ -75,7 +75,8 @@ def join_all_into_one(streams):
 convert_if_needed()
 bigstream = load_converted()
 
-# if __name__ == '__main__':
-    # events = streams[np.random.choice(len(streams))]
-    # events = [Event.from_integer(e) for e in events]
-    # play_events(events)
+if __name__ == '__main__':
+    indice = np.random.choice(len(bigstream)-2000)
+    events = bigstream[indice:indice+1024]
+    events = [Event.from_integer(e) for e in events]
+    play_events(events)
