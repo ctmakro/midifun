@@ -16,9 +16,9 @@ print(categories,'categories in stream')
 def model_builder():
     c = ct.Can()
     gru,d1,d2 = (
-        c.add(GRU(categories,128)),
-        c.add(LastDimDense(128,64)),
-        c.add(LastDimDense(64,categories)),
+        c.add(GRU(categories,256)),
+        c.add(LastDimDense(256,256)),
+        c.add(LastDimDense(256,categories)),
     )
 
     def call(i,starting_state=None):
@@ -31,7 +31,7 @@ def model_builder():
         ending_state = i[:,t-1,:]
 
         i = d1(i)
-        i = Act('swish')(i)
+        i = Act('lrelu')(i)
         i = d2(i)
         # i = Act('softmax')(i)
 
@@ -94,10 +94,11 @@ get_session().run(gvi()) # init global variable
 
 # training loop
 
-time_steps = 64 # 64 events
+time_steps = 512
+batch_size = 1
+
 def r(ep=100):
     length = len(bigstream)
-    batch_size = 16
     mbl = time_steps * batch_size
     sr = length - mbl - time_steps - 2
     for i in range(ep):
@@ -113,7 +114,7 @@ def r(ep=100):
 
         if i%100==0 : pass#show2()
 
-def eval(length=400):
+def eval(length=400,argmax=False):
     stream = []
     event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
     starting_state = None
@@ -127,7 +128,10 @@ def eval(length=400):
         )
 
         dist = stateful_y[0,0] # last dimension is the probability distribution
-        code = np.random.choice(categories, p=dist) # sample a byte from distribution
+        if argmax==True:
+            code = np.argmax(dist)
+        else:
+            code = np.random.choice(categories, p=dist) # sample a byte from distribution
         stream.append(code)
         # use as input of next timestep
         event[0,0] = code
