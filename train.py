@@ -30,7 +30,7 @@ def model_builder():
 
         ending_state = i[:,t-1,:]
 
-        i = Act('lrelu')(i)
+        i = Act('lrelu',alpha=0.05)(i)
         i = d1(i)
         # i = Act('softmax')(i)
 
@@ -125,6 +125,8 @@ def eval(length=400,argmax=False):
             event, # input to RNN
             starting_state, # prev state of RNN
         )
+        # use ending_state as new starting_state
+        starting_state = ending_state
 
         dist = stateful_y[0,0] # last dimension is the probability distribution
         if argmax==True:
