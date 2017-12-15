@@ -15,9 +15,9 @@ print(categories,'categories in stream')
 # RNN model
 def model_builder():
     c = ct.Can()
-    gru,d1,d2 = (
+    gru,d1 = (
         c.add(GRU(categories,256)),
-        c.add(LastDimDense(256,256)),
+        # c.add(LastDimDense(256,256)),
         c.add(LastDimDense(256,categories)),
     )
 
@@ -30,9 +30,8 @@ def model_builder():
 
         ending_state = i[:,t-1,:]
 
-        i = d1(i)
         i = Act('lrelu')(i)
-        i = d2(i)
+        i = d1(i)
         # i = Act('softmax')(i)
 
         return i, ending_state
@@ -47,10 +46,10 @@ def feed_gen():
     input_text = tf.placeholder(tf.uint8,
         shape=[None, None]) # [batch, timesteps]
 
-    input_text_float = tf.one_hot(input_text,depth=categories,dtype=tf.float32)
+    input_text_onehot= tf.one_hot(input_text,depth=categories,dtype=tf.float32)
 
-    xhead = input_text_float[:,:-1] # [batch, 0:timesteps-1, cat]
-    gt = input_text_float[:,1:] # [batch, 1:timesteps, cat]
+    xhead = input_text_onehot[:,:-1] # [batch, 0:timesteps-1, cat]
+    gt = input_text_onehot[:,1:] # [batch, 1:timesteps, cat]
     y,_ = model(xhead,starting_state=None) # [batch, 1:timesteps, cat]
 
     loss = ct.mean_softmax_cross_entropy(y,gt)
@@ -68,12 +67,12 @@ def feed_gen():
     # if we have starting_state for the RNN
     starting_state = tf.placeholder(tf.float32, shape=[None, None])
     stateful_y, ending_state = \
-        model(input_text_float,starting_state=starting_state)
+        model(input_text_onehot,starting_state=starting_state)
     stateful_y = Act('softmax')(stateful_y)
 
     # if we dont have starting state for the RNN
     stateful_y_init, ending_state_init = \
-        model(input_text_float)
+        model(input_text_onehot)
     stateful_y_init = Act('softmax')(stateful_y_init)
 
     def stateful_predict(i, st=None):
