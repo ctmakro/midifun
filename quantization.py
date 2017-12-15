@@ -37,23 +37,25 @@ def quantization_splits_gen(steps, bias, linfac=1., qfac=0., cfac=0.):
 
 # quantization splits of delay time length
 delay_quantization_splits = quantization_splits_gen(
-    steps = 64,
-    bias = 0.015, # 15ms
-    linfac = 0.5,
-    qfac = 0.7,
-    cfac = 2,
+    steps = 8,
+    bias = 0.010, # 15ms
+    linfac = 0.1,
+    qfac = 0,
+    cfac = 0,
 )
 
 # quantization splits of stroke velocity
 vel_quantization_splits = quantization_splits_gen(
-    steps = 16, # should do?
+    steps = 8, # should do?
     bias = 0, # starts from 0
-    linfac = 80,
+    linfac = 100,
     qfac = 40,
 )
 
 if __name__ == '__main__':
+    print('delay quantization levels')
     [print(s)for s in delay_quantization_splits]
+    print('vel quantization levels')
     [print(s)for s in vel_quantization_splits]
 
 delay_quantize,delay_recover = quantizer_gen(delay_quantization_splits)
