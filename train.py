@@ -16,9 +16,9 @@ print(categories,'categories in stream')
 def model_builder():
     c = ct.Can()
     gru,d1 = (
-        c.add(GRU(categories,256)),
+        c.add(GRU(categories,128)),
         # c.add(LastDimDense(256,256)),
-        c.add(LastDimDense(256,categories)),
+        c.add(LastDimDense(128,categories)),
     )
 
     def call(i,starting_state=None):
@@ -30,7 +30,7 @@ def model_builder():
 
         ending_state = i[:,t-1,:]
 
-        i = Act('lrelu',alpha=0.05)(i)
+        i = Act('lrelu',alpha=0.1)(i)
         i = d1(i)
         # i = Act('softmax')(i)
 
@@ -40,6 +40,7 @@ def model_builder():
     return c
 
 model = model_builder()
+model.summary()
 
 # functions to train and eval
 def feed_gen():
