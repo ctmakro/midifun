@@ -9,6 +9,7 @@ from datasource import bigstream
 
 categories = cr.get_code_categories()
 print(categories,'categories in stream')
+print('stream length:',len(bigstream))
 
 # code below partially from gru_text_generation_2.py
 
