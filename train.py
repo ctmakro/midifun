@@ -1,3 +1,6 @@
+
+from plotter import interprocess_plotter as plotter
+
 import tensorflow as tf
 import canton as ct
 from canton import *
@@ -41,11 +44,8 @@ def model_builder():
     c.set_function(call)
     return c
 
-model = model_builder()
-model.summary()
-
 # functions to train and eval
-def feed_gen():
+def feed_gen(model):
     input_text = tf.placeholder(tf.uint8,
         shape=[None, None]) # [batch, timesteps]
 
@@ -90,55 +90,59 @@ def feed_gen():
 
     return feed, stateful_predict
 
-feed,stateful_predict = feed_gen()
+if __name__ == '__main__':
+    model = model_builder()
+    model.summary()
+    feed,stateful_predict = feed_gen(model)
+    get_session().run(gvi()) # init global variable
 
-get_session().run(gvi()) # init global variable
+    # training loop
 
-# training loop
+    time_steps = 512
+    batch_size = 1
+    iplotter = plotter(num_lines=1)
 
-time_steps = 512
-batch_size = 1
+    def r(ep=100):
+        length = len(bigstream)
+        mbl = time_steps * batch_size
+        sr = length - mbl - time_steps - 2
+        for i in range(ep):
+            print('---------------------iter',i,'/',ep)
 
-def r(ep=100):
-    length = len(bigstream)
-    mbl = time_steps * batch_size
-    sr = length - mbl - time_steps - 2
-    for i in range(ep):
-        print('---------------------iter',i,'/',ep)
+            j = np.random.choice(sr)
 
-        j = np.random.choice(sr)
+            minibatch = bigstream[j:j+mbl]
+            minibatch.shape = [batch_size, time_steps]
 
-        minibatch = bigstream[j:j+mbl]
-        minibatch.shape = [batch_size, time_steps]
+            loss = feed(minibatch)
+            print('loss:',loss)
+            iplotter.pushys([loss])
 
-        loss = feed(minibatch)
-        print('loss:',loss)
+            if i%100==0 : pass#show2()
 
-        if i%100==0 : pass#show2()
+    def eval(length=400,argmax=False):
+        stream = []
+        event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
+        starting_state = None
 
-def eval(length=400,argmax=False):
-    stream = []
-    event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
-    starting_state = None
+        # sequentially generate musical event out of the GRU
+        for i in range(length):
+            # output of RNN, new state of RNN
+            stateful_y, ending_state = stateful_predict(
+                event, # input to RNN
+                starting_state, # prev state of RNN
+            )
+            # use ending_state as new starting_state
+            starting_state = ending_state
 
-    # sequentially generate musical event out of the GRU
-    for i in range(length):
-        # output of RNN, new state of RNN
-        stateful_y, ending_state = stateful_predict(
-            event, # input to RNN
-            starting_state, # prev state of RNN
-        )
-        # use ending_state as new starting_state
-        starting_state = ending_state
+            dist = stateful_y[0,0] # last dimension is the probability distribution
+            if argmax==True:
+                code = np.argmax(dist)
+            else:
+                code = np.random.choice(categories, p=dist) # sample a byte from distribution
+            stream.append(code)
+            # use as input of next timestep
+            event[0,0] = code
 
-        dist = stateful_y[0,0] # last dimension is the probability distribution
-        if argmax==True:
-            code = np.argmax(dist)
-        else:
-            code = np.random.choice(categories, p=dist) # sample a byte from distribution
-        stream.append(code)
-        # use as input of next timestep
-        event[0,0] = code
-
-    print(length,'events sampled. playing...')
-    play_events([Event.from_integer(i) for i in stream])
+        print(length,'events sampled. playing...')
+        play_events([Event.from_integer(i) for i in stream])
