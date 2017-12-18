@@ -15,13 +15,26 @@ print('stream length:',len(bigstream))
 # code below partially from gru_text_generation_2.py
 
 # RNN model
-def model_builder():
+def model_builder(style=0):
     c = ct.Can()
-    gru,d1,d2 = (
-        c.add(GRU(categories,128)),
-        c.add(LastDimDense(128,64)),
-        c.add(LastDimDense(64,categories)),
-    )
+    if style==0:
+        gru,d1,d2 = (
+            c.add(GRU(categories,128)),
+            c.add(LastDimDense(128,64)),
+            c.add(LastDimDense(64,categories)),
+        )
+    elif style==1:
+        gru,d1= (
+            c.add(GRU(categories,128)),
+            # c.add(LastDimDense(128,64)),
+            c.add(LastDimDense(128,categories)),
+        )
+    elif style==2:
+        gru,d1= (
+            c.add(GRU(categories,64)),
+            # c.add(LastDimDense(128,64)),
+            c.add(LastDimDense(64,categories)),
+        )
 
     def call(i,starting_state=None):
         # i is one-hot encoded
@@ -32,9 +45,12 @@ def model_builder():
 
         ending_state = i[:,t-1,:]
 
-        i = d1(i)
-        i = Act('lrelu',alpha=0.1)(i)
-        i = d2(i)
+        if style==0:
+            i = d1(i)
+            i = Act('lrelu',alpha=0.1)(i)
+            i = d2(i)
+        elif style==1 or style==2:
+            i = d1(i)
         # i = Act('softmax')(i)
 
         return i, ending_state
@@ -89,12 +105,16 @@ def feed_gen(model):
     return feed, stateful_predict
 
 from plotter import interprocess_plotter as plotter
-iplotter = plotter(num_lines=1)
 
 if __name__ == '__main__':
-    model = model_builder()
-    model.summary()
-    feed,stateful_predict = feed_gen(model)
+    models = [model_builder(style=k) for k in range(3)]
+    feed_predicts = [feed_gen(m) for m in models]
+    [m.summary() for m in models]
+    iplotter = plotter(num_lines=len(models))
+
+    # model = model_builder()
+    # model.summary()
+    # feed,stateful_predict = feed_gen(model)
     get_session().run(gvi()) # init global variable
 
     # training loop
@@ -114,35 +134,41 @@ if __name__ == '__main__':
             minibatch = bigstream[j:j+mbl]
             minibatch.shape = [batch_size, time_steps]
 
-            loss = feed(minibatch)
-            print('loss:',loss)
-            iplotter.pushys([loss])
+            loss = [fp[0](minibatch) for fp in feed_predicts]
+            # print('loss:',loss)
+            iplotter.pushys(loss)
 
             if i%100==0 : pass#show2()
 
     def eval(length=400,argmax=False):
-        stream = []
-        event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
-        starting_state = None
+        for fp in feed_predicts:
+            feed,stateful_predict = fp
 
-        # sequentially generate musical event out of the GRU
-        for i in range(length):
-            # output of RNN, new state of RNN
-            stateful_y, ending_state = stateful_predict(
-                event, # input to RNN
-                starting_state, # prev state of RNN
-            )
-            # use ending_state as new starting_state
-            starting_state = ending_state
+            stream = []
+            event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
+            starting_state = None
 
-            dist = stateful_y[0,0] # last dimension is the probability distribution
-            if argmax==True:
-                code = np.argmax(dist)
-            else:
-                code = np.random.choice(categories, p=dist) # sample a byte from distribution
-            stream.append(code)
-            # use as input of next timestep
-            event[0,0] = code
+            # sequentially generate musical event out of the GRU
+            for i in range(length):
+                # output of RNN, new state of RNN
+                stateful_y, ending_state = stateful_predict(
+                    event, # input to RNN
+                    starting_state, # prev state of RNN
+                )
+                # use ending_state as new starting_state
+                starting_state = ending_state
 
-        print(length,'events sampled. playing...')
-        play_events([Event.from_integer(i) for i in stream])
+                dist = stateful_y[0,0] # last dimension is the probability distribution
+                if argmax==True:
+                    code = np.argmax(dist)
+                else:
+                    code = np.random.choice(categories, p=dist) # sample a byte from distribution
+                stream.append(code)
+                # use as input of next timestep
+                event[0,0] = code
+
+            print(length,'events sampled. playing...')
+            play_events([Event.from_integer(i) for i in stream])
+
+            import time
+            time.sleep(2)
