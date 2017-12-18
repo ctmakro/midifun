@@ -17,6 +17,7 @@ class python_instance:
         self.sbc = sbc()
 
         if is_filename==True:
+            print('[python_instance] attempt to load script from',code)
             with open(code,'r') as f:
                 code = f.read()
 
