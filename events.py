@@ -37,16 +37,19 @@ class CodeRegistrar:
 
 from quantization import delay_quantize,delay_recover,vel_quantize,vel_recover
 from quantization import delay_quantization_levels, vel_quantization_levels
+from quantization import octave_range,subnote_range,note_quantize,note_recover
 
 quantize_recover_map = {
-    'note': [lambda x:x,lambda x:x],
+    'octave': [lambda x:x,lambda x:x],
+    'subnote': [lambda x:x,lambda x:x],
     'delay': [delay_quantize, delay_recover],
     'velocity':[vel_quantize, lambda x:int(vel_recover(x))]
 }
 
 cr = CodeRegistrar()
 
-cr.register('note',128)
+cr.register('octave',octave_range)
+cr.register('subnote',subnote_range)
 cr.register('delay', delay_quantization_levels)
 cr.register('velocity',vel_quantization_levels)
 
@@ -97,11 +100,16 @@ def MIDI_to_events(fn): # given midi filename
         # time.sleep(msg.time)
         if not msg.is_meta:
             # outport.send(msg)
+            def appendNote(note):
+                octave,subnote = note_quantize(note)
+                events.append(Event('octave', octave))
+                events.append(Event('subnote', subnote))
+
             if msg.type == 'note_on':
-                events.append(Event('note', msg.note))
+                appendNote(msg.note)
                 events.append(Event('velocity', msg.velocity))
             if msg.type == 'note_off':
-                events.append(Event('note', msg.note))
+                appendNote(msg.note)
                 events.append(Event('velocity', 0))
 
     print('got {} events, {} dups elimd.'.format(len(events),dedup_counter))
@@ -110,17 +118,22 @@ def MIDI_to_events(fn): # given midi filename
 # given an array of events, play them out loud
 def play_events(events,speed=1.):
     outport = get_outport()
-    selected = 0
+    # selected = 0
+    octave = 0
+    subnote = 0
     for event in events:
         if event.category=='delay':
             # test quantization
             # event.value = delay_recover(delay_quantize(event.value))
             delay = event.value
             time.sleep(delay/speed)
-        elif event.category=='note':
-            selected = event.value
+        elif event.category=='octave':
+            octave = event.value
+        elif event.category=='subnote':
+            subnote = event.value
         elif event.category=='velocity':
             # event.value = int(vel_recover(vel_quantize(event.value)))
+            selected = note_recover(octave,subnote)
             msg = mido.Message('note_on', note=selected, velocity=event.value)
             outport.send(msg)
         else:

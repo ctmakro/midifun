@@ -52,6 +52,24 @@ vel_quantization_splits = quantization_splits_gen(
     qfac = 40,
 )
 
+total_notes = 128
+total_octaves = int(128/12) # discard a small fraction of the notes.
+remain_total_notes = total_octaves*12
+octave_range = total_octaves
+subnote_range = 12
+def note_quantize(note):
+    if note>=remain_total_notes:
+        return None # fails
+    else:
+        octave = int(note/12)
+        subnote = note % 12
+        assert octave<total_octaves
+        assert subnote<12
+        return octave,subnote
+
+def note_recover(octave,subnote):
+    return int(octave*12+subnote)
+
 if __name__ == '__main__':
     print('delay quantization levels')
     [print(s)for s in delay_quantization_splits]
