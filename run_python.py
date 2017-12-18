@@ -1,16 +1,20 @@
 from sp import sp,run_subprocess,stdoutprint
 
 # pipe based communicator
-from pbc import pbc
+# from pbc import pbc
+# socket based communicator
+from sbc import sbc
 
-# add following as prefix of code to initialize pbc at child-side
-with open('pbc.py','r') as f:
-    pbccode = f.read()
+# add following as prefix of code to initialize sbc at child-side
+with open('sbc.py','r') as f:
+    sbccode = f.read()
 
 class python_instance:
-    def __init__(self,code,is_filename=False):
+    def __init__(self,code,is_filename=False,sigint=True,print_callback = stdoutprint):
         # create pipe based communicator prior to starting child process (important). otherwise the child cannot inherit the fd-s of the pipes
-        self.pbc = pbc()
+        # self.pbc = pbc()
+
+        self.sbc = sbc()
 
         if is_filename==True:
             with open(code,'r') as f:
@@ -19,20 +23,31 @@ class python_instance:
         t,pop = run_subprocess(
             ['python','-u'],
             end_callback = None,
-            print_callback = stdoutprint,
+            # print_callback = stdoutprint,
+            print_callback = print_callback,
+            # pass_fds = self.pbc.childfds, # not supported on windows...
         )
         self.finished=False
         self.t,self.pop = t,pop
 
         # file descriptors for child-side communication
-        cfds = self.pbc.childfds
+        # cfds = self.pbc.childfds
 
-        precode = pbccode + '\n' + \
-        "pbc = pbc(({},{}))".format(cfds[0],cfds[1])
+        port = self.sbc.port
 
+        precode = sbccode + '\n' + \
+        "sbc = sbc({})".format(port)
+
+        if sigint==False:
+            precode+='''
+import signal
+def handle():
+    pass
+signal.signal(signal.SIGINT, handle)
+'''
         precode+='''
-def read(*a):return pbc.read(*a)
-def write(*a):return pbc.write(*a)
+def read(*a):return sbc.read(*a)
+def write(*a):return sbc.write(*a)
 def send(obj):
     import pickle
     bytes = pickle.dumps(obj)
@@ -44,9 +59,9 @@ def recv():
         '''
 
         postcode = '''
-del pbc
+del sbc
         '''
-        code = precode + code + postcode
+        code = precode + code # + postcode
 
         # print(code)
         pop.stdin.write(code.encode('utf-8'))
@@ -77,12 +92,13 @@ del pbc
 
     def __del__(self):
         self.kill()
-        del self.pbc
+        # del self.pbc
+        del self.sbc
 
     def read(self):
-        return self.pbc.read()
+        return self.sbc.read()
     def write(self,bytes):
-        return self.pbc.write(bytes)
+        return self.sbc.write(bytes)
 
     def send(self,obj):
         import pickle
@@ -110,17 +126,18 @@ while True:
     else:
         print(d)
     time.sleep(0.5)
-recv()
+# recv()
     '''
 
     pi = python_instance(code)
 
     pi.send('hello')
     pi.send('world')
+    pi.send('yeah!')
     pi.send('stop')
     print(pi.recv())
 
     import time
     time.sleep(1)
-    del pi # pi might not end as expected.
-    # pi.wait_for_finish()
+    # del pi # pi might not end as expected.
+    pi.wait_for_finish()

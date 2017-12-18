@@ -14,7 +14,11 @@ def stdoutprint(*args):
     sys.stdout.flush()
     printlock.release()
 
-def run_subprocess(args, end_callback=None, print_callback=stdoutprint):
+def run_subprocess(args,
+    end_callback=None,
+    print_callback=stdoutprint,
+    # pass_fds=(),
+    ):
     if print_callback is None:
         def print_callback(*args):
             pass
@@ -26,8 +30,9 @@ def run_subprocess(args, end_callback=None, print_callback=stdoutprint):
         stdin=sp.PIPE,
         stdout=sp.PIPE,
         stderr=sp.PIPE,
-        close_fds=False, # allow communication via pipes
-        preexec_fn=os.setpgrp # dont forward signals like ctrl-c (important)
+        # pass_fds=pass_fds,
+        # close_fds=False, # allow communication via pipes
+        # preexec_fn=os.setpgrp # dont forward signals like ctrl-c (important)
     )
     def stderr_poll():
         while True:
