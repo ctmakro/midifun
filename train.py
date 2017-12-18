@@ -1,6 +1,4 @@
 
-from plotter import interprocess_plotter as plotter
-
 import tensorflow as tf
 import canton as ct
 from canton import *
@@ -90,6 +88,9 @@ def feed_gen(model):
 
     return feed, stateful_predict
 
+from plotter import interprocess_plotter as plotter
+iplotter = plotter(num_lines=1)
+
 if __name__ == '__main__':
     model = model_builder()
     model.summary()
@@ -100,7 +101,6 @@ if __name__ == '__main__':
 
     time_steps = 512
     batch_size = 1
-    iplotter = plotter(num_lines=1)
 
     def r(ep=100):
         length = len(bigstream)
