@@ -4,7 +4,11 @@ class interprocess_plotter:
     def __init__(self,num_lines=1):
         # super().__init__(remote_plotter_callback)
         from run_python import python_instance
-        self.pi = python_instance('plotter2.py',is_filename=True)
+        self.pi = python_instance(
+            'plotter2.py',
+            is_filename=True,
+            sigint=False, # no ctrl-c s
+        )
 
         self.pi.send(('init',num_lines))
 

@@ -41,8 +41,8 @@ class python_instance:
         if sigint==False:
             precode+='''
 import signal
-def handle():
-    pass
+def handle(number,frame):
+    print('got signal',number,'(ignore)')
 signal.signal(signal.SIGINT, handle)
 '''
         precode+='''
