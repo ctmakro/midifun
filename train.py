@@ -4,7 +4,7 @@ import canton as ct
 from canton import *
 import numpy as np
 
-from midiutil import mido, outport, open_midifile
+from midiutil import mido, get_outport, open_midifile
 from events import MIDI_to_events, play_events, Event, cr
 from datasource import bigstream
 

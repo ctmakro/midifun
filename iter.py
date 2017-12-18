@@ -1,5 +1,5 @@
 import os,time
-from midiutil import mido, outport, open_midifile
+from midiutil import mido, get_outport, open_midifile
 
 midipath = './midies/'
 names = os.listdir(midipath)

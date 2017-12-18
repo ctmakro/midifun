@@ -39,12 +39,24 @@ class pbc: # pipe based communicator
         fd = self.r
         length = os.read(fd,4) # 2^32 max
         if len(length)!=4:
-            raise EOFError('EOF on read()')
+            raise EOFError('EOF on read(), expect 4, got {}'.format(len(length)))
         length = int_from_bytes(length)
-        content = os.read(fd,length)
-        if len(content)!=length:
-            raise EOFError('EOF on read()')
-        return content
+
+        content = b''
+        remain = length
+        while 1:
+            temp = os.read(fd,remain)
+            content += temp
+            remain -= len(temp)
+
+            if remain>0:
+                continue
+            elif remain<0:
+                raise Exception('overread')
+            else:
+                return content
+                # raise EOFError('EOF on read(), expect {}, got {}'.format(length,len(content)))
+        # return content
 
     def write(self,bytes):
         fd = self.w

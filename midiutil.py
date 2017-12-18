@@ -1,6 +1,9 @@
 import mido
-mido.set_backend('mido.backends.rtmidi')
-outport = mido.open_output()
+
+def get_outport():
+    mido.set_backend('mido.backends.rtmidi')
+    outport = mido.open_output()
+    return outport
 
 from mido import MidiFile
 

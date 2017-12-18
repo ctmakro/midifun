@@ -2,7 +2,7 @@
 import numpy as np
 import os
 
-from midiutil import mido, outport, open_midifile
+from midiutil import mido, get_outport, open_midifile
 from iter import midies # filenames of all midi files
 from events import MIDI_to_events, play_events, Event
 
@@ -13,19 +13,31 @@ def convert_all_and_save():
 
     streams = []
 
-    from thready import amap
-    def process(fn):
-    # for fn in midies:
-        print('converting', fn)
-        events = MIDI_to_events(fn)
-        # events = [e.to_integer() for e in events]
-        # events = np.array(events).astype('uint8')
-        print('done.')
-        # streams.append(events)
-        return events
+    # from thready import amap
+    # def process(fn):
+    # # for fn in midies:
+    #     print('converting', fn)
+    #     events = MIDI_to_events(fn)
+    #     # events = [e.to_integer() for e in events]
+    #     # events = np.array(events).astype('uint8')
+    #     print('done.')
+    #     # streams.append(events)
+    #     return events
+    #
+    # result = amap(process, midies)
+    # streams = [result[i]for i in result]
 
-    result = amap(process, midies)
-    streams = [result[i]for i in result]
+    from run_python import python_instance
+    # 4 file descriptor per process...
+    def convert_batch(midies):
+        pis = [python_instance('midi2events.py', is_filename=True) for fn in midies]
+        [p.send(fn) for p,fn in zip(pis,midies)]
+        streams = [p.recv() for p in pis]
+        return streams
+
+    # print(streams)
+    for i in range(0,len(midies),16):
+        streams += convert_batch(midies[i:i+16])
 
     # join into one
     print('joining...')

@@ -1,4 +1,4 @@
-from midiutil import mido, outport, open_midifile
+from midiutil import mido, get_outport, open_midifile
 
 import time
 
@@ -109,6 +109,7 @@ def MIDI_to_events(fn): # given midi filename
 
 # given an array of events, play them out loud
 def play_events(events,speed=1.):
+    outport = get_outport()
     selected = 0
     for event in events:
         if event.category=='delay':
