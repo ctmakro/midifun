@@ -192,3 +192,20 @@ if __name__ == '__main__':
 
             # import time
             # time.sleep(2)
+
+    def submit(fn=None):
+        import crowdai
+        import mido
+        from apikey import apikey # as a string
+
+        midi_file_path=filename if fn is not None else 'sampled_0.mid'
+        API_KEY=apikey
+
+        midifile = mido.MidiFile(midi_file_path)
+        assert midifile.length > 3600 - 10 and midifile.length < 3600 + 10
+        midifile.type=0
+        assert len(midifile.tracks) == 1
+        assert midifile.type == 0
+
+        challenge = crowdai.Challenge("AIGeneratedMusicChallenge", API_KEY)
+        challenge.submit(midi_file_path)
