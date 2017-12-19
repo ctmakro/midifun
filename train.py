@@ -18,22 +18,19 @@ print('stream length:',len(bigstream))
 def model_builder(style=0):
     c = ct.Can()
     if style==0:
-        gru,d1,d2 = (
+        gru,d1 = (
             c.add(GRU(categories,128)),
-            c.add(LastDimDense(128,64)),
-            c.add(LastDimDense(64,categories)),
-        )
-    elif style==1:
-        gru,d1= (
-            c.add(GRU(categories,128)),
-            # c.add(LastDimDense(128,64)),
             c.add(LastDimDense(128,categories)),
         )
+    elif style==1:
+        gru,d1 = (
+            c.add(GRU(categories,192)),
+            c.add(LastDimDense(192,categories)),
+        )
     elif style==2:
-        gru,d1= (
-            c.add(GRU(categories,64)),
-            # c.add(LastDimDense(128,64)),
-            c.add(LastDimDense(64,categories)),
+        gru,d1 = (
+            c.add(GRU(categories,128)),
+            c.add(LastDimDense(128,categories)),
         )
 
     def call(i,starting_state=None):
@@ -45,12 +42,7 @@ def model_builder(style=0):
 
         ending_state = i[:,t-1,:]
 
-        if style==0:
-            i = d1(i)
-            i = Act('lrelu',alpha=0.1)(i)
-            i = d2(i)
-        elif style==1 or style==2:
-            i = d1(i)
+        i = d1(i)
         # i = Act('softmax')(i)
 
         return i, ending_state
@@ -107,7 +99,7 @@ def feed_gen(model):
 from plotter import interprocess_plotter as plotter
 
 if __name__ == '__main__':
-    models = [model_builder(style=k) for k in range(3)]
+    models = [model_builder(style=k) for k in [1]]
     feed_predicts = [feed_gen(m) for m in models]
     [m.summary() for m in models]
     iplotter = plotter(num_lines=len(models))
@@ -140,8 +132,8 @@ if __name__ == '__main__':
 
             if i%100==0 : pass#show2()
 
-    def eval(length=400,argmax=False):
-        for fp in feed_predicts:
+    def eval(length=400,argmax=False,tofile=False):
+        for e,fp in enumerate(feed_predicts):
             feed,stateful_predict = fp
 
             stream = []
@@ -167,8 +159,16 @@ if __name__ == '__main__':
                 # use as input of next timestep
                 event[0,0] = code
 
-            print(length,'events sampled. playing...')
-            play_events([Event.from_integer(i) for i in stream])
+            integerized_stream = [Event.from_integer(i) for i in stream]
+            if tofile==False:
+                print(length,'events sampled. playing...')
+                play_events(integerized_stream)
+            else:
+                filename = 'sampled_{}.mid'.format(e)
+                print(length,'events sampled. saving to',filename)
+                midifile = play_events(integerized_stream,tofile=True)
+                midifile.save(filename)
+                print('total time:',midifile.length)
 
-            import time
-            time.sleep(2)
+            # import time
+            # time.sleep(2)

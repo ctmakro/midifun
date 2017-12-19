@@ -116,7 +116,20 @@ def MIDI_to_events(fn): # given midi filename
     return events
 
 # given an array of events, play them out loud
-def play_events(events,speed=1.):
+def play_events(events,speed=1.,tofile=False):
+    # to a midifile, if requested
+    if tofile:
+        from mido import Message, MidiFile, MidiTrack
+        outfile = MidiFile()
+        track = MidiTrack()
+        outfile.tracks.append(track)
+
+        def add_delay(time):
+            ticks = mido.second2tick(time,480,500000)
+            track.append(Message('note_off',note=0,velocity=0,time=int(ticks)))
+        def add_message(m):
+            track.append(m)
+
     outport = get_outport()
     # selected = 0
     octave = 0
@@ -126,7 +139,10 @@ def play_events(events,speed=1.):
             # test quantization
             # event.value = delay_recover(delay_quantize(event.value))
             delay = event.value
-            time.sleep(delay/speed)
+            if tofile:
+                add_delay(delay)
+            else:
+                time.sleep(delay/speed)
         elif event.category=='octave':
             octave = event.value
         elif event.category=='subnote':
@@ -135,12 +151,19 @@ def play_events(events,speed=1.):
             # event.value = int(vel_recover(vel_quantize(event.value)))
             selected = note_recover(octave,subnote)
             msg = mido.Message('note_on', note=selected, velocity=event.value)
-            outport.send(msg)
+            if tofile:
+                add_message(msg)
+            else:
+                outport.send(msg)
         else:
             # print(event)
             raise NotImplementedError('unknown event')
         print(event)
-    return
+
+    if tofile:
+        return outfile
+    else:
+        return
 
 if __name__ == '__main__':
     events = MIDI_to_events('./midies/bach_846.mid')
