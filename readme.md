@@ -13,6 +13,7 @@ a char-rnn model is used to predict next event (one of delay, note, velocity), g
 - mido (midi file reading/playing)
 - python-rtmidi (as backend for mido to interface with your system's midi devices)
 - If you're on OSX you'll probably need a software emulated midi output device(on Windows you already have one provided by Microsoft) in order to play midi notes thru speaker. If that's the case please install SimpleSynth.
+- matplotlib (trainning visualization)
 
 ## Usage
 
@@ -22,7 +23,7 @@ a char-rnn model is used to predict next event (one of delay, note, velocity), g
     $ python download.py
     ```
 
-2. convert all downloaded and extracted midi files into our event stream representation, then save as `converted.npz`. RNN models could take that representation as their input.
+2. convert all downloaded and extracted midi files into our event stream representation(an array of 8-bit integers), then save as `converted.npz`(numpy array format). RNN models could take that representation as their input.
 
     ```bash
     $ python datasource.py
@@ -35,3 +36,15 @@ a char-rnn model is used to predict next event (one of delay, note, velocity), g
     ```
 
     then enter `r(1000)` to train for 1000 minibatches. enter `eval(1000)` to generate a stream of 1000 events and play via your system's default midi device.
+
+4. submission (to CrowdAI for scoring)
+
+    create the file `apikey.py` with the following content:
+
+    ```python
+    apikey = '<your api key as a string>'
+    ```
+
+    enter `eval(seconds=3600,tofile=True)` to generate approximately 3600 seconds of music and save to `sampled_0.mid`.
+
+    enter `submit()` to submit to CrowdAI (if you took part in their MIDI music generation competition) via Internet.
