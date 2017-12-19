@@ -132,16 +132,23 @@ if __name__ == '__main__':
 
             if i%100==0 : pass#show2()
 
-    def eval(length=400,argmax=False,tofile=False):
+    def eval(length=400,argmax=False,tofile=False,seconds=None):
         for e,fp in enumerate(feed_predicts):
             feed,stateful_predict = fp
 
             stream = []
-            event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
+            # event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
+            event = np.array([np.random.choice(categories)]).reshape(1,1)
             starting_state = None
 
             # sequentially generate musical event out of the GRU
-            for i in range(length):
+            # for i in range(length):
+            if seconds is None:
+                counter = length # number of events remain to generate
+            else:
+                counter = 0 # number of seconds of music so far
+
+            while 1:
                 # output of RNN, new state of RNN
                 stateful_y, ending_state = stateful_predict(
                     event, # input to RNN
@@ -158,6 +165,19 @@ if __name__ == '__main__':
                 stream.append(code)
                 # use as input of next timestep
                 event[0,0] = code
+
+                if seconds is None:
+                    counter-=1
+                    if counter==0:
+                        break
+                else: # if we generate by seconds
+                    temp = Event.from_integer(code)
+                    if temp.category=='delay':
+                        counter+=temp.value
+                        if counter>seconds:
+                            break
+                        else:
+                            print(counter,'seconds generated...')
 
             integerized_stream = [Event.from_integer(i) for i in stream]
             if tofile==False:

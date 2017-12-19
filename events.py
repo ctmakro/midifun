@@ -117,6 +117,7 @@ def MIDI_to_events(fn): # given midi filename
 
 # given an array of events, play them out loud
 def play_events(events,speed=1.,tofile=False):
+    total_time = 0
     # to a midifile, if requested
     if tofile:
         from mido import Message, MidiFile, MidiTrack
@@ -124,8 +125,10 @@ def play_events(events,speed=1.,tofile=False):
         track = MidiTrack()
         outfile.tracks.append(track)
 
+        scale = mido.second2tick(1,480,500000)
+        import numpy as np
         def add_delay(time):
-            ticks = mido.second2tick(time,480,500000)
+            ticks = int(time*scale+np.random.uniform()) # jittered sampling
             track.append(Message('note_off',note=0,velocity=0,time=int(ticks)))
         def add_message(m):
             track.append(m)
@@ -139,6 +142,7 @@ def play_events(events,speed=1.,tofile=False):
             # test quantization
             # event.value = delay_recover(delay_quantize(event.value))
             delay = event.value
+            total_time+=delay
             if tofile:
                 add_delay(delay)
             else:
@@ -158,8 +162,10 @@ def play_events(events,speed=1.,tofile=False):
         else:
             # print(event)
             raise NotImplementedError('unknown event')
-        print(event)
+        if not tofile:
+            print(event)
 
+    print('(play_events) total time:',total_time)
     if tofile:
         return outfile
     else:
