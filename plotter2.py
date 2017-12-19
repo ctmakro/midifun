@@ -20,6 +20,7 @@ class plotter:
         self.y = []
         self.num_lines = num_lines
         self.ys = [[] for i in range(num_lines)]
+        self.labels = [str(i) for i in range(num_lines)]
 
         self.colors = [
             [
@@ -30,6 +31,7 @@ class plotter:
             for i in range(num_lines)]
 
         self.time = time.time()
+        self.time_between_redraw = 1.
 
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(1,1,1)
@@ -52,29 +54,38 @@ class plotter:
 
     def show(self):
         self.lock.acquire()
-        if self.anything_new():
-            self.ax.clear()
-            self.ax.grid(color='#f0f0f0', linestyle='solid', linewidth=1)
+        t = time.time()
+        if t - self.time > self.time_between_redraw:
+            # dont redreaw if too frequent
+            if self.anything_new():
+                # redraw!
+                self.ax.clear()
+                self.ax.grid(color='#f0f0f0', linestyle='solid', linewidth=1)
 
-            x = self.x
+                x = self.x
 
-            for idx in range(len(self.ys)):
-                y = self.ys[idx]
-                c = self.colors[idx]
-                self.ax.plot(x,y,color=tuple(c))
+                for idx in range(len(self.ys)): # original plot
+                    y = self.ys[idx]
+                    c = self.colors[idx]
+                    self.ax.plot(x,y,color=tuple(c),label=self.labels[idx])
+                    self.ax.legend()
 
-            for idx in range(len(self.ys)):
-                y = self.ys[idx]
-                c = self.colors[idx]
-                init = 5
-                if len(y)>init:
-                    ysmooth = [sum(y[0:init])/init]*init
-                    for i in range(init,len(y)): # first order
-                        ysmooth.append(ysmooth[-1]*0.9+y[i]*0.1)
-                    for i in range(init,len(y)): # second order
-                        ysmooth[i] = ysmooth[i-1]*0.9+ysmooth[i]*0.1
+                for idx in range(len(self.ys)): # low pass plot
+                    y = self.ys[idx]
+                    c = self.colors[idx]
+                    init = 5
+                    if len(y)>init:
+                        ysmooth = [sum(y[0:init])/init]*init
+                        for i in range(init,len(y)): # first order
+                            ysmooth.append(ysmooth[-1]*0.9+y[i]*0.1)
+                        for i in range(init,len(y)): # second order
+                            ysmooth[i] = ysmooth[i-1]*0.9+ysmooth[i]*0.1
 
-                    self.ax.plot(x,ysmooth,lw=2,color=tuple([cp**0.3 for cp in c]),alpha=0.5)
+                        self.ax.plot(x,ysmooth,lw=2,color=tuple([cp**0.3 for cp in c]),alpha=0.5)
+
+                redraw_time = time.time() - t
+                self.time_between_redraw = redraw_time*2
+                self.time = time.time()
 
         self.lock.release()
         # plt.pause(0.2)
@@ -103,6 +114,9 @@ class plotter:
         self.something_new = True
         self.lock.release()
 
+    def setlabels(self,labels):
+        self.labels = labels
+
     def anything_new(self):
         # self.lock.acquire()
         n = self.something_new
@@ -126,6 +140,8 @@ def receive_loop():
         msg = recv()
         if msg[0] == 'pushys':
             p.pushys(msg[1])
+        elif msg[0] == 'setlabels':
+            p.setlabels(msg[1])
         else:
             break
 

@@ -18,12 +18,16 @@ class interprocess_plotter:
         # self.send(('pushys', ys))
         self.pi.send(('pushys', ys))
 
+    def setlabels(self,labels):
+        self.pi.send(('setlabels',labels))
+
     # def __del__(self):
     #     del self.pi
 
 if __name__=='__main__':
-    ip = interprocess_plotter2(2)
+    ip = interprocess_plotter(2)
     import math,time
+    ip.setlabels(['hell','yeah'])
     for i in range(100):
         ip.pushys([math.sin(i/10), math.sin(i/10+2)])
         time.sleep(0.05)
