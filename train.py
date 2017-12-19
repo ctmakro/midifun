@@ -147,6 +147,7 @@ if __name__ == '__main__':
                 counter = length # number of events remain to generate
             else:
                 counter = 0 # number of seconds of music so far
+                length = 0
 
             while 1:
                 # output of RNN, new state of RNN
@@ -171,13 +172,15 @@ if __name__ == '__main__':
                     if counter==0:
                         break
                 else: # if we generate by seconds
+                    length+=1
                     temp = Event.from_integer(code)
                     if temp.category=='delay':
                         counter+=temp.value
                         if counter>seconds:
                             break
                         else:
-                            print(counter,'seconds generated...')
+                            if np.random.uniform()>0.98:
+                                print(counter,'seconds generated...')
 
             integerized_stream = [Event.from_integer(i) for i in stream]
             if tofile==False:
