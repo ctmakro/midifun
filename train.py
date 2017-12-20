@@ -19,18 +19,23 @@ def model_builder(style=0):
     c = ct.Can()
     if style==0:
         gru,d1 = (
-            c.add(GRU(categories,128)),
-            c.add(LastDimDense(128,categories)),
+            c.add(GRU2(categories,192,double=False)),
+            c.add(LastDimDense(192,categories)),
         )
     elif style==1:
         gru,d1 = (
-            c.add(GRU(categories,192)),
+            c.add(GRU2(categories,192,double=True)),
             c.add(LastDimDense(192,categories)),
         )
     elif style==2:
         gru,d1 = (
-            c.add(GRU(categories,128)),
-            c.add(LastDimDense(128,categories)),
+            c.add(RNN(categories,256,nonlinearity=Act('tanh'))),
+            c.add(LastDimDense(256,categories)),
+        )
+    elif style==3:
+        gru,d1 = (
+            c.add(RNN(categories,256,nonlinearity=Act('selu'))),
+            c.add(LastDimDense(256,categories)),
         )
 
     def call(i,starting_state=None):
@@ -99,7 +104,7 @@ def feed_gen(model):
 from plotter import interprocess_plotter as plotter
 
 if __name__ == '__main__':
-    models = [model_builder(style=k) for k in [1]]
+    models = [model_builder(style=k) for k in range(2)]
     feed_predicts = [feed_gen(m) for m in models]
     [m.summary() for m in models]
     iplotter = plotter(num_lines=len(models))
