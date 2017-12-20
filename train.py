@@ -142,8 +142,8 @@ if __name__ == '__main__':
             feed,stateful_predict = fp
 
             stream = []
-            # event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
-            event = np.array([np.random.choice(categories)]).reshape(1,1)
+            event = np.array(Event('delay',0.1).to_integer()).reshape(1,1)
+            # event = np.array([np.random.choice(categories)]).reshape(1,1)
             starting_state = None
 
             # sequentially generate musical event out of the GRU
