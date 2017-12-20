@@ -6,6 +6,38 @@ names = os.listdir(midipath)
 
 midies = list(filter(lambda n:True if n.lower().endswith('.mid') else False, names))
 
+list_keywords = '''Skr
+Tl-
+SCHUMANN - Fantasie C
+SHOSTAKOVICH - Op-87
+-Bth
+-Br
+-Deb-
+-Ch
+-Cle
+Hero
+Hung
+Etude Op-08'''.split('\n')
+keep_keywords = '''Chopin
+CHOPIN
+Chaminade
+Brahms
+Deb-iou
+Deb-me
+Hungarian'''.split('\n')
+def acceptable(filename):
+    # kill the files from unacceptable author.
+    for s in list_keywords:
+        if s in filename:
+            for k in keep_keywords:
+                if k in filename:
+                    return True
+            print(filename,'rejected due to',s)
+            return False
+    return True
+
+midies = list(filter(acceptable,midies))
+
 midies = [midipath+m for m in midies]
 
 def show_info(midifile):
@@ -21,4 +53,5 @@ def show_all_info():
         del midifile
 
 if __name__ == '__main__':
-    show_all_info()
+    pass
+    # show_all_info()
