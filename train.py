@@ -19,13 +19,13 @@ def model_builder(style=0):
     c = ct.Can()
     if style==0:
         gru,d1 = (
-            c.add(GRU2(categories,192,double=False)),
-            c.add(LastDimDense(192,categories)),
+            c.add(GRU2(categories,128,double=False)),
+            c.add(LastDimDense(128,categories)),
         )
     elif style==1:
         gru,d1 = (
-            c.add(GRU2(categories,192,double=True)),
-            c.add(LastDimDense(192,categories)),
+            c.add(GRU2(categories,128,double=True)),
+            c.add(LastDimDense(128,categories)),
         )
     elif style==2:
         gru,d1 = (
