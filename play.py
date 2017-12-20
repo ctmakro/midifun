@@ -3,7 +3,9 @@ import sys
 # sys.stdout.encoding = 'utf-8'
 print(sys.stdout.encoding)
 
-from midiutil import mido, outport, open_midifile
+from midiutil import mido, get_outport, open_midifile
+
+outport = get_outport()
 
 def playfile(fn):
     midifile = open_midifile(fn)
@@ -17,4 +19,5 @@ def playfile(fn):
 
         print(str(msg).encode('utf-8'))
 
-playfile('./midies/bach_846.mid')
+playfile('midies/alb_esp1.mid')
+playfile('midies/Albeniz Espana (Spain) Op-165 Capricho Catalan.mid')
