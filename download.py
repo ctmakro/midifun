@@ -30,8 +30,7 @@ zip_template = "http://www.piano-midi.de/zip/{}.zip"
 zip_urls = [zip_template.format(i) for i in names]
 
 zip_urls += \
-'''http://hog.ee.columbia.edu/craffel/lmd/clean_midi.tar.gz
-http://www.kuhmann.com/Disklavier/Classical-I%20(001-215)%20MID.zip
+'''http://www.kuhmann.com/Disklavier/Classical-I%20(001-215)%20MID.zip
 http://www.kuhmann.com/Disklavier/Classical-II%20(215)%20MID.zip
 http://www.kuhmann.com/Disklavier/Classical-III%20(222)%20MID.zip
 http://www.kuhmann.com/Disklavier/Classical-IV%20(136)%20MID.zip
