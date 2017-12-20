@@ -19,8 +19,8 @@ def model_builder(style=0):
     c = ct.Can()
     if style==0:
         gru,d1 = (
-            c.add(GRU2(categories,128,double=False)),
-            c.add(LastDimDense(128,categories)),
+            c.add(GRU2(categories,256)),
+            c.add(LastDimDense(256,categories)),
         )
     elif style==1:
         gru,d1 = (
@@ -55,12 +55,30 @@ def model_builder(style=0):
     c.set_function(call)
     return c
 
+# load dataset into device memory
+inmem_dataset = tf.Variable(bigstream,dtype=tf.uint8)
+inmem = True
+
 # functions to train and eval
 def feed_gen(model):
-    input_text = tf.placeholder(tf.uint8,
-        shape=[None, None]) # [batch, timesteps]
+    if inmem: # in memory dataset
+        input_index = tf.placeholder(dtype=tf.int32,name='iindex')
+        input_timesteps = tf.placeholder(dtype=tf.int32,name='its')
+        input_batchsize = tf.placeholder(dtype=tf.int32,name='ibs')
 
-    input_text_onehot= tf.one_hot(input_text,depth=categories,dtype=tf.float32)
+        input_text_segment = inmem_dataset[input_index:input_index+input_timesteps*input_batchsize]
+        input_text = tf.reshape(input_text_segment,
+            [input_batchsize,input_timesteps])
+
+        input_text_test = tf.placeholder(tf.uint8,
+            shape=[None, None]) # [batch, timesteps]
+
+        input_text_onehot= tf.one_hot(input_text,depth=categories,dtype=tf.float32)
+        input_text_onehot_test= tf.one_hot(input_text_test,depth=categories,dtype=tf.float32)
+    else:
+        input_text = tf.placeholder(tf.uint8,
+            shape=[None, None]) # [batch, timesteps]
+        input_text_onehot= tf.one_hot(input_text,depth=categories,dtype=tf.float32)
 
     xhead = input_text_onehot[:,:-1] # [batch, 0:timesteps-1, cat]
     gt = input_text_onehot[:,1:] # [batch, 1:timesteps, cat]
@@ -71,32 +89,48 @@ def feed_gen(model):
     train_step = tf.train.AdamOptimizer(1e-3).minimize(
         loss,var_list=model.get_weights())
 
-    def feed(minibatch):
-        nonlocal train_step,loss,input_text
-        sess = ct.get_session()
-        res = sess.run([loss,train_step],feed_dict={input_text:minibatch})
-        return res[0]
+    if inmem:
+        def feed(idx,ts,bs):
+            nonlocal train_step,loss
+            nonlocal input_index,input_timesteps,input_batchsize
+            sess = ct.get_session()
+            res = sess.run([loss,train_step],feed_dict={
+                input_index:idx,
+                input_timesteps:ts,
+                input_batchsize:bs,
+            })
+            return res[0]
+    else:
+        def feed(minibatch):
+            nonlocal train_step,loss,input_text
+            sess = ct.get_session()
+            res = sess.run([loss,train_step],feed_dict={input_text:minibatch})
+            return res[0]
 
     # stateful predict:
     # if we have starting_state for the RNN
     starting_state = tf.placeholder(tf.float32, shape=[None, None])
     stateful_y, ending_state = \
-        model(input_text_onehot,starting_state=starting_state)
+        model(input_text_onehot if not inmem else input_text_onehot_test,starting_state=starting_state)
     stateful_y = Act('softmax')(stateful_y)
 
     # if we dont have starting state for the RNN
     stateful_y_init, ending_state_init = \
-        model(input_text_onehot)
+        model(input_text_onehot if not inmem else input_text_onehot_test)
     stateful_y_init = Act('softmax')(stateful_y_init)
 
     def stateful_predict(i, st=None):
         sess = ct.get_session()
         if st is None: # if we dont have starting_state for the RNN
             res = sess.run([stateful_y_init,ending_state_init],
-                feed_dict={input_text:i})
+                feed_dict={input_text:i} if not inmem else {
+                    input_text_test:i
+                })
         else:
             res = sess.run([stateful_y,ending_state],
-                feed_dict={input_text:i,starting_state:st})
+                feed_dict={input_text:i,starting_state:st} if not inmem else{
+                    input_text_test:i,starting_state:st
+                })
         return res
 
     return feed, stateful_predict
@@ -104,7 +138,7 @@ def feed_gen(model):
 from plotter import interprocess_plotter as plotter
 
 if __name__ == '__main__':
-    models = [model_builder(style=k) for k in range(2)]
+    models = [model_builder(style=k) for k in range(1)]
     feed_predicts = [feed_gen(m) for m in models]
     [m.summary() for m in models]
     iplotter = plotter(num_lines=len(models))
@@ -128,10 +162,13 @@ if __name__ == '__main__':
 
             j = np.random.choice(sr)
 
-            minibatch = bigstream[j:j+mbl]
-            minibatch.shape = [batch_size, time_steps]
+            if not inmem:
+                minibatch = bigstream[j:j+mbl]
+                minibatch.shape = [batch_size, time_steps]
 
-            loss = [fp[0](minibatch) for fp in feed_predicts]
+                loss = [fp[0](minibatch) for fp in feed_predicts]
+            else:
+                loss = [fp[0](j,time_steps,batch_size) for fp in feed_predicts]
             # print('loss:',loss)
             iplotter.pushys(loss)
 
