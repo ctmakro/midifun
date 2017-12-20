@@ -28,16 +28,42 @@ def convert_all_and_save():
     # streams = [result[i]for i in result]
 
     from run_python import python_instance
-    # 4 file descriptor per process...
-    def convert_batch(midies):
-        pis = [python_instance('midi2events.py', is_filename=True) for fn in midies]
-        [p.send(fn) for p,fn in zip(pis,midies)]
-        streams = [p.recv() for p in pis]
-        return list(filter(lambda x:x is not None, streams))
+    import threading as th
+    import psutil
+    cores = psutil.cpu_count()
+    print(cores,'cpu found')
 
-    # print(streams)
-    for i in range(0,len(midies),16):
-        streams += convert_batch(midies[i:i+16])
+    sem = th.Semaphore(cores)
+
+    # for each instance, use a thread to do the communication
+    def convert_one(filename):
+        pi = python_instance('midi2events.py', is_filename=True)
+        pi.send(filename)
+        stream = pi.recv()
+        pi.wait_for_finish()
+        if stream is not None:
+            streams.append(stream)
+        sem.release()
+
+    threads = []
+    for fn in midies:
+        t = th.Thread(target=convert_one,args=(fn,),daemon=True)
+        threads.append(t)
+        sem.acquire() # restrict num of parallel threads
+        t.start()
+
+    [t.join() for t in threads]
+
+    # # 4 file descriptor per process...
+    # def convert_batch(midies):
+    #     pis = [python_instance('midi2events.py', is_filename=True) for fn in midies]
+    #     [p.send(fn) for p,fn in zip(pis,midies)]
+    #     streams = [p.recv() for p in pis]
+    #     return list(filter(lambda x:x is not None, streams))
+    #
+    # # print(streams)
+    # for i in range(0,len(midies),16):
+    #     streams += convert_batch(midies[i:i+16])
 
     print('scramble...')
     np.random.shuffle(streams)
