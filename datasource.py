@@ -33,11 +33,14 @@ def convert_all_and_save():
         pis = [python_instance('midi2events.py', is_filename=True) for fn in midies]
         [p.send(fn) for p,fn in zip(pis,midies)]
         streams = [p.recv() for p in pis]
-        return streams
+        return list(filter(lambda x:x is not None, streams))
 
     # print(streams)
     for i in range(0,len(midies),16):
         streams += convert_batch(midies[i:i+16])
+
+    print('scramble...')
+    np.random.shuffle(streams)
 
     # join into one
     print('joining...')
@@ -71,13 +74,14 @@ def convert_if_needed():
 
 # given a stream of events, chop the delay into shorter segments.
 def chop_delay(stream):
+    from quantization import delay_quantization_splits
+
     buf = []
     maxdelay = 3.0
-    maxchopped = 0.0975
+    maxchopped = delay_quantization_splits[-1]
     for event in stream:
-        value = event.value
-        category = event.category
-        if category=='delay':
+        if event.category=='delay':
+            value = event.value
             if value>maxdelay:
                 value=maxdelay
             while True:

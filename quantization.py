@@ -37,10 +37,10 @@ def quantization_splits_gen(steps, bias, linfac=1., qfac=0., cfac=0.):
 
 # quantization splits of delay time length
 delay_quantization_splits = quantization_splits_gen(
-    steps = 8,
-    bias = 0.010, # 15ms
-    linfac = 0.1,
-    qfac = 0,
+    steps = 10,
+    bias = 0.002, # 5ms
+    linfac = 0.01,
+    qfac = 0.1,
     cfac = 0,
 )
 

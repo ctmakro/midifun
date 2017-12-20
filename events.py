@@ -88,6 +88,11 @@ def MIDI_to_events(fn): # given midi filename
         else:
             return Event('null')
 
+    def appendNote(note):
+        octave,subnote = note_quantize(note)
+        events.append(Event('octave', octave))
+        events.append(Event('subnote', subnote))
+
     for msg in midifile:
         if msg.time>0: # accumulate delay onto last delay event. ignore if delay is zero.
             le = get_last_event()
@@ -100,10 +105,6 @@ def MIDI_to_events(fn): # given midi filename
         # time.sleep(msg.time)
         if not msg.is_meta:
             # outport.send(msg)
-            def appendNote(note):
-                octave,subnote = note_quantize(note)
-                events.append(Event('octave', octave))
-                events.append(Event('subnote', subnote))
 
             if msg.type == 'note_on':
                 appendNote(msg.note)

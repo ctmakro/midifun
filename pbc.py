@@ -42,7 +42,7 @@ class pbc: # pipe based communicator
             raise EOFError('EOF on read(), expect 4, got {}'.format(len(length)))
         length = int_from_bytes(length)
 
-        content = b''
+        content = bytearray()
         remain = length
         while 1:
             temp = os.read(fd,remain)

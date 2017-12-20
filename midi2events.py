@@ -3,5 +3,11 @@
 from events import MIDI_to_events, play_events, Event
 
 filename = recv()
-events = MIDI_to_events(filename)
-send(events)
+try:
+    events = MIDI_to_events(filename)
+except Exception as e:
+    import traceback
+    traceback.print_exc()
+    send(None)
+else:
+    send(events)
