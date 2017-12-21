@@ -3,7 +3,9 @@ import numpy as np
 import os
 
 from midiutil import mido, get_outport, open_midifile
-from iter import midies # filenames of all midi files
+# from iter import midies # filenames of all midi files
+from music_filter import get_filtered_list
+midies = get_filtered_list()
 from events import MIDI_to_events, play_events, Event
 
 data_filename = 'converted.npz'

@@ -18,6 +18,8 @@ def playfile(fn):
             outport.send(msg)
 
         print(str(msg).encode('utf-8'))
+    del midifile
 
-playfile('midies/alb_esp1.mid')
-playfile('midies/Albeniz Espana (Spain) Op-165 Capricho Catalan.mid')
+if __name__ == '__main__':
+    playfile('midies/alb_esp1.mid')
+    playfile('midies/Albeniz Espana (Spain) Op-165 Capricho Catalan.mid')

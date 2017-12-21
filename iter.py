@@ -15,11 +15,16 @@ SHOSTAKOVICH - Op-87
 -Deb-
 -Ch
 -Cle
+-Sk-
+219-LIS
 Hero
 Hung
-Etude Op-08'''.split('\n')
-keep_keywords = '''Chopin
-CHOPIN
+Etude Op-08
+Triana
+BWV
+Ravel Miroirs
+CHOPIN, Fred'''.split('\n')
+keep_keywords = '''Chop
 Chaminade
 Brahms
 Deb-iou
@@ -32,7 +37,7 @@ def acceptable(filename):
             for k in keep_keywords:
                 if k in filename:
                     return True
-            print(filename,'rejected due to',s)
+            print(filename.encode('utf-8'),'rejected due to',s)
             return False
     return True
 
