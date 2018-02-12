@@ -13,7 +13,7 @@ a char-rnn model is used to predict next event (one of delay, note, velocity), g
 - mido (midi file reading/playing)
 - python-rtmidi (as backend for mido to interface with your system's midi devices)
 - If you're on OSX you'll probably need a software emulated midi output device(on Windows you already have one provided by Microsoft) in order to play midi notes thru speaker. If that's the case please install SimpleSynth.
-- If you're on Ubuntu you'll probably need `sudo apt-get install libasound2-dev`
+- If you're on Ubuntu you'll probably need `sudo apt-get install libasound2-dev libjack-dev` before installing python-rtmidi
 - matplotlib (trainning visualization)
 
 ## Usage
