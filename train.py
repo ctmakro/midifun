@@ -19,8 +19,8 @@ def model_builder(style=0):
     c = ct.Can()
     if style==0:
         gru,d1 = (
-            c.add(GRU2(categories,256)),
-            c.add(LastDimDense(256,categories)),
+            c.add(GRU2(categories,128)),
+            c.add(LastDimDense(128,categories)),
         )
     elif style==1:
         gru,d1 = (
